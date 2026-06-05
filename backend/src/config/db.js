@@ -2,11 +2,18 @@
 require('dotenv').config();
 
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+// Testa a conexão ao iniciar
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('❌ Erro ao conectar no banco:', err.message);
+  } else {
+    console.log('✅ Conectado ao PostgreSQL com sucesso!');
+    release();
+  }
 });
 
 module.exports = pool;
