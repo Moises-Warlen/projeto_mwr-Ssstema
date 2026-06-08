@@ -8,8 +8,13 @@ function Clientes() {
     const [modalExcluir, setModalExcluir] = useState({ show: false, id: null, nome: '' });
 
     const carregar = async () => {
-        const res = await api.get('/clientes');
-        setClientes(res.data);
+        try {
+            const res = await api.get('/clientes');
+            setClientes(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error(err);
+            setClientes([]);
+        }
     };
 
     useEffect(() => { carregar(); }, []);
@@ -26,7 +31,6 @@ function Clientes() {
     };
 
     const handleEdit = (c) => { setForm(c); setEditando(true); };
-    
     const confirmarExclusao = (id, nome) => setModalExcluir({ show: true, id, nome });
     const executarExclusao = async () => {
         try {
@@ -50,17 +54,26 @@ function Clientes() {
             </form>
             <div className="table-responsive">
                 <table>
-                    <thead><tr><th>Nome</th><th>Telefone</th><th>Email</th><th>Endereço</th><th>Ações</th></tr></thead>
+                    <thead>
+                        <tr><th>Nome</th><th>Telefone</th><th>Email</th><th>Endereço</th><th>Ações</th></tr>
+                    </thead>
                     <tbody>
-                        {clientes.map(c => (
-                            <tr key={c.id}>
-                                <td>{c.nome}</td><td>{c.telefone}</td><td>{c.email}</td><td>{c.endereco}</td>
-                                <td>
-                                    <button className="btn btn-warning" onClick={() => handleEdit(c)}>Editar</button>
-                                    <button className="btn btn-danger" onClick={() => confirmarExclusao(c.id, c.nome)}>Excluir</button>
-                                </td>
-                            </tr>
-                        ))}
+                        {clientes.length === 0 ? (
+                            <tr><td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>Nenhum cliente cadastrado</td></tr>
+                        ) : (
+                            clientes.map(c => (
+                                <tr key={c.id}>
+                                    <td>{c.nome}</td>
+                                    <td>{c.telefone}</td>
+                                    <td>{c.email}</td>
+                                    <td>{c.endereco}</td>
+                                    <td>
+                                        <button className="btn btn-warning" onClick={() => handleEdit(c)}>Editar</button>
+                                        <button className="btn btn-danger" onClick={() => confirmarExclusao(c.id, c.nome)}>Excluir</button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

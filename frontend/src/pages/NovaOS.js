@@ -15,9 +15,15 @@ function NovaOS() {
 
     useEffect(() => {
         const load = async () => {
-            const [clientesRes, catRes] = await Promise.all([api.get('/clientes'), api.get('/categorias')]);
-            setClientes(clientesRes.data);
-            setCategorias(catRes.data);
+            try {
+                const [clientesRes, catRes] = await Promise.all([api.get('/clientes'), api.get('/categorias')]);
+                setClientes(Array.isArray(clientesRes.data) ? clientesRes.data : []);
+                setCategorias(Array.isArray(catRes.data) ? catRes.data : []);
+            } catch (err) {
+                console.error(err);
+                setClientes([]);
+                setCategorias([]);
+            }
         };
         load();
     }, []);

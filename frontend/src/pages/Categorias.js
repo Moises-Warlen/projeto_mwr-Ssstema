@@ -8,8 +8,13 @@ function Categorias() {
     const [modalExcluir, setModalExcluir] = useState({ show: false, id: null, nome: '' });
 
     const carregar = async () => {
-        const res = await api.get('/categorias');
-        setCategorias(res.data);
+        try {
+            const res = await api.get('/categorias');
+            setCategorias(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error(err);
+            setCategorias([]);
+        }
     };
     useEffect(() => { carregar(); }, []);
 
@@ -46,17 +51,25 @@ function Categorias() {
             </form>
             <div className="table-responsive">
                 <table>
-                    <thead><tr><th>Nome</th><th>Preço sugerido</th><th>Tempo (min)</th><th>Ações</th></tr></thead>
+                    <thead>
+                        <tr><th>Nome</th><th>Preço sugerido</th><th>Tempo (min)</th><th>Ações</th></tr>
+                    </thead>
                     <tbody>
-                        {categorias.map(c => (
-                            <tr key={c.id}>
-                                <td>{c.nome}</td><td>R$ {c.preco_sugerido}</td><td>{c.tempo_estimado_minutos}</td>
-                                <td>
-                                    <button className="btn btn-warning" onClick={() => handleEdit(c)}>Editar</button>
-                                    <button className="btn btn-danger" onClick={() => confirmarExclusao(c.id, c.nome)}>Excluir</button>
-                                </td>
-                            </tr>
-                        ))}
+                        {categorias.length === 0 ? (
+                            <tr><td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>Nenhuma categoria cadastrada</td></tr>
+                        ) : (
+                            categorias.map(c => (
+                                <tr key={c.id}>
+                                    <td>{c.nome}</td>
+                                    <td>R$ {c.preco_sugerido}</td>
+                                    <td>{c.tempo_estimado_minutos}</td>
+                                    <td>
+                                        <button className="btn btn-warning" onClick={() => handleEdit(c)}>Editar</button>
+                                        <button className="btn btn-danger" onClick={() => confirmarExclusao(c.id, c.nome)}>Excluir</button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
