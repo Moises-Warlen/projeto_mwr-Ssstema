@@ -27,22 +27,33 @@ function UploadFotos({ osId }) {
         files.forEach(file => formData.append('fotos', file));
         setUploading(true);
         try {
-            await api.post(`/fotos/upload`, formData, {
+            // 1. Upload para o Cloudinary via backend
+            const uploadRes = await api.post(`/fotos/upload`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
+            
+            // 2. Extrair as URLs do Cloudinary
+            const imageUrls = uploadRes.data.urls;
+            
+            // 3. Salvar as URLs no banco (associadas à OS)
+            await api.post(`/fotos/${osId}/fotos`, { fotos: imageUrls });
+            
+            // 4. Recarregar a lista de fotos
             await carregarFotos();
+            
+            alert('Fotos enviadas com sucesso!');
         } catch (err) {
-            alert('Erro ao enviar fotos');
+            console.error('Erro detalhado:', err);
+            alert('Erro ao enviar fotos: ' + (err.response?.data?.error || err.message));
         } finally {
             setUploading(false);
+            e.target.value = '';
         }
     };
 
     const obterUrlFoto = (caminho) => {
         if (!caminho) return '';
-        // Se já for URL completa, retorna ela
         if (caminho.startsWith('http')) return caminho;
-        // Se for caminho local
         const nomeArquivo = caminho.split('\\').pop();
         return `https://projeto-mwr-ssstema-1.onrender.com/uploads/${nomeArquivo}`;
     };
@@ -64,7 +75,6 @@ function UploadFotos({ osId }) {
                 ))}
             </div>
 
-            {/* Modal de zoom em tela cheia */}
             {modalFoto && (
                 <div
                     style={{

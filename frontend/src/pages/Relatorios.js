@@ -49,24 +49,62 @@ function Relatorios() {
         pdf.save('relatorio_servicos.pdf');
     };
 
+    // Formatar data apenas (sem hora)
+    const formatarData = (dataString) => {
+        if (!dataString) return '—';
+        const data = new Date(dataString);
+        return data.toLocaleDateString('pt-BR');
+    };
+
     const enviarWhatsApp = () => {
         if (resultados.length === 0) {
             alert('Nenhum dado para compartilhar. Gere o relatório primeiro.');
             return;
         }
+        
         const totalServicos = resultados.length;
         const valorTotal = resultados.reduce((acc, r) => acc + (r.total_servico || 0), 0).toFixed(2);
-        const periodo = filtros.data_inicio && filtros.data_fim ? ` de ${filtros.data_inicio} a ${filtros.data_fim}` : '';
-        const clienteNome = filtros.cliente_id ? clientes.find(c => c.id === parseInt(filtros.cliente_id))?.nome : 'todos os clientes';
-        let msg = `📊 *RELATÓRIO DE SERVIÇOS*%0A`;
-        msg += `Cliente: ${clienteNome}%0APeríodo: ${periodo || 'todo'}%0A`;
-        msg += `Total de serviços: ${totalServicos}%0AValor total: R$ ${valorTotal}%0A%0A`;
-        msg += `*Detalhes:*%0A`;
-        resultados.slice(0, 10).forEach(os => {
-            msg += `- ${os.data_conclusao} | ${os.cliente_nome} | ${os.servico_realizado?.substring(0,30) || '—'} | R$ ${os.total_servico.toFixed(2)}%0A`;
+        const periodo = filtros.data_inicio && filtros.data_fim ? ` de ${formatarData(filtros.data_inicio)} a ${formatarData(filtros.data_fim)}` : ' (todo período)';
+        const clienteNome = filtros.cliente_id ? clientes.find(c => c.id === parseInt(filtros.cliente_id))?.nome : 'TODOS OS CLIENTES';
+        
+        let msg = `📊 *RELATÓRIO DE SERVIÇOS - MWR SISTEMA* 📊%0A`;
+        msg += `═══════════════════════════════════════%0A`;
+        msg += `📅 *Período:* ${periodo}%0A`;
+        msg += `👤 *Cliente:* ${clienteNome}%0A`;
+        msg += `📦 *Total de serviços:* ${totalServicos}%0A`;
+        msg += `💰 *Valor total:* R$ ${valorTotal}%0A`;
+        msg += `═══════════════════════════════════════%0A%0A`;
+        
+        msg += `📋 *DETALHES DOS SERVIÇOS:*%0A`;
+        msg += `─────────────────────────────────%0A`;
+        
+        resultados.forEach((os, index) => {
+            msg += `${index + 1}. 🗓️ *Data:* ${formatarData(os.data_conclusao)}%0A`;
+            msg += `   👤 *Cliente:* ${os.cliente_nome}%0A`;
+            msg += `   🔧 *Equipamento:* ${os.equipamento} ${os.modelo}%0A`;
+            msg += `   📝 *Serviço:* ${os.servico_realizado?.substring(0, 40) || '—'}%0A`;
+            msg += `   🏷️ *Tipo:* ${os.tipo_atendimento === 'presencial' ? 'Presencial' : 'Remoto'}%0A`;
+            msg += `   💰 *Valor serviço:* R$ ${parseFloat(os.preco_final).toFixed(2)}%0A`;
+            if (mostrarDeslocamento && os.valor_deslocamento > 0) {
+                msg += `   🚗 *Deslocamento:* R$ ${parseFloat(os.valor_deslocamento).toFixed(2)}%0A`;
+            }
+            msg += `   ✅ *Total:* R$ ${os.total_servico.toFixed(2)}%0A`;
+            if (mostrarTempo && os.tempo_formatado) {
+                msg += `   ⏱️ *Tempo gasto:* ${os.tempo_formatado}%0A`;
+            }
+            msg += `─────────────────────────────────%0A`;
         });
-        if (resultados.length > 10) msg += `... e mais ${resultados.length - 10} serviços.%0A`;
-        msg += `%0AGerado por mwrSistema.`;
+        
+        msg += `%0A📊 *RESUMO FINAL*%0A`;
+        msg += `═══════════════════════════════════════%0A`;
+        msg += `📦 Total de serviços: ${totalServicos}%0A`;
+        msg += `💰 Valor total: R$ ${valorTotal}%0A`;
+        if (mostrarTempo) {
+            const totalSeg = resultados.reduce((acc, r) => acc + (r.tempo_acumulado_segundos || 0), 0);
+            msg += `⏱️ Tempo total: ${Math.floor(totalSeg/3600)}h ${Math.floor((totalSeg%3600)/60)}min%0A`;
+        }
+        msg += `%0A✨ Gerado por mwrSistema - Gestão de OS ✨`;
+        
         const url = `https://wa.me/5516993250660?text=${msg}`;
         window.open(url, '_blank');
     };
@@ -80,7 +118,24 @@ function Relatorios() {
 
     return (
         <div>
-            <h2>Relatórios de Serviços Concluídos</h2>
+            {/* Cabeçalho do Relatório */}
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                <h1 style={{ 
+                    background: 'linear-gradient(135deg, #1e3c72, #2a5298)',
+                    color: 'white',
+                    padding: '15px 30px',
+                    borderRadius: '50px',
+                    display: 'inline-block',
+                    fontSize: '1.8rem',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                }}>
+                    📊 RELATÓRIO DE SERVIÇOS
+                </h1>
+                <p style={{ color: '#666', marginTop: '10px' }}>
+                    Sistema de Gestão de Ordens de Serviço - mwrSistema
+                </p>
+            </div>
+
             <div className="filtros-container">
                 <select onChange={e => setFiltros({...filtros, cliente_id: e.target.value})}>
                     <option value="">Todos clientes</option>
@@ -94,7 +149,7 @@ function Relatorios() {
                 </select>
                 <label><input type="checkbox" checked={mostrarTempo} onChange={e => setMostrarTempo(e.target.checked)} /> Mostrar tempo</label>
                 <label><input type="checkbox" checked={mostrarDeslocamento} onChange={e => setMostrarDeslocamento(e.target.checked)} /> Mostrar deslocamento</label>
-                <button className="btn btn-primary" onClick={gerarRelatorio}>Filtrar</button>
+                <button className="btn btn-primary" onClick={gerarRelatorio}>🔍 Filtrar</button>
                 {resultados.length > 0 && (
                     <>
                         <button className="btn btn-success" onClick={gerarPDF}>📄 Gerar PDF</button>
@@ -103,12 +158,24 @@ function Relatorios() {
                 )}
             </div>
 
-            <div ref={relatorioRef} className="table-responsive" style={{ background: 'white', borderRadius: '24px', padding: '1rem' }}>
+            <div ref={relatorioRef} className="table-responsive" style={{ background: 'white', borderRadius: '24px', padding: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                {/* Cabeçalho da tabela */}
+                <div style={{ textAlign: 'center', marginBottom: '15px', paddingBottom: '10px', borderBottom: '2px solid #007bff' }}>
+                    <h3 style={{ margin: 0, color: '#1e3c72' }}>MWR SISTEMA - RELATÓRIO DE SERVIÇOS</h3>
+                    <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#666' }}>
+                        Gerado em: {new Date().toLocaleString('pt-BR')}
+                    </p>
+                </div>
+                
                 <table style={{ width: '100%' }}>
                     <thead>
                         <tr>
-                            <th>Cliente</th><th>Data</th><th>Equipamento</th><th>Serviço Realizado</th>
-                            <th>Tipo</th><th>Valor Serviço</th>
+                            <th>Cliente</th>
+                            <th>Data</th>
+                            <th>Equipamento</th>
+                            <th>Serviço Realizado</th>
+                            <th>Tipo</th>
+                            <th>Valor Serviço</th>
                             {mostrarDeslocamento && <th>Deslocamento</th>}
                             <th>Total</th>
                             {mostrarTempo && <th>Tempo gasto</th>}
@@ -116,20 +183,22 @@ function Relatorios() {
                     </thead>
                     <tbody>
                         {resultados.length === 0 ? (
-                            <tr><td colSpan={mostrarDeslocamento ? 8 : 7} style={{ textAlign: 'center', padding: '40px' }}>Nenhum serviço concluído no período</td></tr>
+                            <td><td colSpan={mostrarDeslocamento ? 8 : 7} style={{ textAlign: 'center', padding: '40px' }}>
+                                Nenhum serviço concluído no período
+                            </td></td>
                         ) : (
                             resultados.map(os => (
                                 <tr key={os.id}>
                                     <td>{os.cliente_nome}</td>
-                                    <td>{new Date(os.data_conclusao).toLocaleDateString()}</td>
+                                    <td>{formatarData(os.data_conclusao)}</td>
                                     <td>{os.equipamento} {os.modelo}</td>
                                     <td>{os.servico_realizado || '—'}</td>
-                                    <td>{os.tipo_atendimento}</td>
+                                    <td>{os.tipo_atendimento === 'presencial' ? 'Presencial' : 'Remoto'}</td>
                                     <td>R$ {parseFloat(os.preco_final).toFixed(2)}</td>
                                     {mostrarDeslocamento && <td>R$ {parseFloat(os.valor_deslocamento).toFixed(2)}</td>}
                                     <td><strong>R$ {os.total_servico.toFixed(2)}</strong></td>
-                                    {mostrarTempo && <td>{os.tempo_formatado}</td>}
-                                </tr>
+                                    {mostrarTempo && <td>{os.tempo_formatado || '—'}</td>}
+                                 </tr>
                             ))
                         )}
                     </tbody>
@@ -139,7 +208,7 @@ function Relatorios() {
                                 <td colSpan={mostrarDeslocamento ? 7 : 6} style={{ textAlign: 'right' }}>Total Geral:</td>
                                 <td>R$ {totalGeral()}</td>
                                 {mostrarTempo && <td>{totalTempo()}</td>}
-                            </tr>
+                             </tr>
                         </tfoot>
                     )}
                 </table>
