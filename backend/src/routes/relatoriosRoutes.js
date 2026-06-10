@@ -6,9 +6,17 @@ router.get('/', async (req, res) => {
     const { cliente_id, data_inicio, data_fim, categoria_id } = req.query;
     let sql = `
         SELECT 
-            os.id, os.numero_os, os.equipamento, os.modelo, os.servico_realizado,
-            os.tipo_atendimento, os.preco_final, os.valor_deslocamento,
-            os.data_conclusao, os.tempo_acumulado_segundos,
+            os.id, 
+            os.numero_os, 
+            os.equipamento, 
+            os.modelo, 
+            os.defeito, 
+            os.servico_realizado,
+            os.tipo_atendimento, 
+            os.preco_final, 
+            os.valor_deslocamento,
+            os.data_conclusao, 
+            os.tempo_acumulado_segundos,
             c.nome AS cliente_nome,
             cat.nome AS categoria_nome
         FROM os
@@ -43,7 +51,7 @@ router.get('/', async (req, res) => {
         }));
         res.json({ dados });
     } catch (err) {
-        console.error(err);
+        console.error('Erro ao gerar relatório:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -52,7 +60,7 @@ function formatarSegundos(segundos) {
     const h = Math.floor(segundos / 3600);
     const m = Math.floor((segundos % 3600) / 60);
     const s = segundos % 60;
-    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
 module.exports = router;

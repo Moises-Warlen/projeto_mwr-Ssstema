@@ -82,6 +82,7 @@ function Relatorios() {
             msg += `${index + 1}. 🗓️ *Data:* ${formatarData(os.data_conclusao)}%0A`;
             msg += `   👤 *Cliente:* ${os.cliente_nome}%0A`;
             msg += `   🔧 *Equipamento:* ${os.equipamento} ${os.modelo}%0A`;
+            msg += `   ⚠️ *Defeito:* ${os.defeito?.substring(0, 50) || '—'}%0A`;
             msg += `   📝 *Serviço:* ${os.servico_realizado?.substring(0, 40) || '—'}%0A`;
             msg += `   🏷️ *Tipo:* ${os.tipo_atendimento === 'presencial' ? 'Presencial' : 'Remoto'}%0A`;
             msg += `   💰 *Valor serviço:* R$ ${parseFloat(os.preco_final).toFixed(2)}%0A`;
@@ -173,6 +174,7 @@ function Relatorios() {
                             <th>Cliente</th>
                             <th>Data</th>
                             <th>Equipamento</th>
+                            <th>Defeito</th>
                             <th>Serviço Realizado</th>
                             <th>Tipo</th>
                             <th>Valor Serviço</th>
@@ -183,32 +185,33 @@ function Relatorios() {
                     </thead>
                     <tbody>
                         {resultados.length === 0 ? (
-                            <td><td colSpan={mostrarDeslocamento ? 8 : 7} style={{ textAlign: 'center', padding: '40px' }}>
+                            <tr><td colSpan={mostrarDeslocamento ? 9 : 8} style={{ textAlign: 'center', padding: '40px' }}>
                                 Nenhum serviço concluído no período
-                            </td></td>
+                            </td</tr>
                         ) : (
                             resultados.map(os => (
                                 <tr key={os.id}>
                                     <td>{os.cliente_nome}</td>
                                     <td>{formatarData(os.data_conclusao)}</td>
                                     <td>{os.equipamento} {os.modelo}</td>
+                                    <td>{os.defeito || '—'}</td>
                                     <td>{os.servico_realizado || '—'}</td>
                                     <td>{os.tipo_atendimento === 'presencial' ? 'Presencial' : 'Remoto'}</td>
                                     <td>R$ {parseFloat(os.preco_final).toFixed(2)}</td>
                                     {mostrarDeslocamento && <td>R$ {parseFloat(os.valor_deslocamento).toFixed(2)}</td>}
                                     <td><strong>R$ {os.total_servico.toFixed(2)}</strong></td>
                                     {mostrarTempo && <td>{os.tempo_formatado || '—'}</td>}
-                                 </tr>
+                                </tr>
                             ))
                         )}
                     </tbody>
                     {resultados.length > 0 && (
                         <tfoot>
                             <tr style={{ background: '#f8f9fa', fontWeight: 'bold' }}>
-                                <td colSpan={mostrarDeslocamento ? 7 : 6} style={{ textAlign: 'right' }}>Total Geral:</td>
+                                <td colSpan={mostrarDeslocamento ? 8 : 7} style={{ textAlign: 'right' }}>Total Geral:</td>
                                 <td>R$ {totalGeral()}</td>
                                 {mostrarTempo && <td>{totalTempo()}</td>}
-                             </tr>
+                            </tr>
                         </tfoot>
                     )}
                 </table>
